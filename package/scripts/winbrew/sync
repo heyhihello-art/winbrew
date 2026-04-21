@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  cat <<USAGE
+Usage: $0 [branch]
+
+Synchronize a WinBrew branch with homebrew/brew without pushing upstream.
+
+Examples:
+  $0 main
+  $0 preview
+USAGE
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+branch="${1:-main}"
+
+case "${branch}" in
+  main|preview|bash|web|compat|compatlinux) ;;
+  *)
+    echo "Unsupported WinBrew branch: ${branch}" >&2
+    usage >&2
+    exit 1
+    ;;
+esac
+
+if ! git remote get-url upstream >/dev/null 2>&1; then
+  echo "Missing upstream remote. Add it with:" >&2
+  echo "  git remote add upstream https://github.com/homebrew/brew.git" >&2
+  exit 1
+fi
+
+if ! git remote get-url origin >/dev/null 2>&1; then
+  echo "Missing origin remote." >&2
+  exit 1
+fi
+
+origin_url="$(git remote get-url origin)"
+if [[ "${origin_url}" == *"homebrew/brew"* ]]; then
+  echo "Refusing to run because origin points at homebrew/brew." >&2
+  echo "Set origin to your WinBrew fork before syncing." >&2
+  exit 1
+fi
+
+echo "Fetching upstream and origin..."
+git fetch upstream
+git fetch origin
+
+echo "Creating branch '${branch}' from upstream/master if needed..."
+if ! git show-ref --verify --quiet "refs/heads/${branch}"; then
+  git checkout -b "${branch}" upstream/master
+else
+  git checkout "${branch}"
+fi
+
+echo "Merging upstream/master into ${branch}..."
+git merge --no-edit upstream/master
+
+echo "Sync complete for '${branch}'."
+echo "Review changes, run checks, then push to your WinBrew fork if desired."

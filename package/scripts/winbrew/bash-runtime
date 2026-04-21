@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+runtime_root="${WINBREW_BASH_ROOT:-${HOMEBREW_PREFIX:-}/winbrew/bash}"
+
+if [[ -z "${runtime_root}" ]]; then
+  echo "Set WINBREW_BASH_ROOT or HOMEBREW_PREFIX before running this script." >&2
+  exit 1
+fi
+
+cat <<MSG
+WinBrew Bash helper
+
+Expected runtime location:
+  ${runtime_root}
+
+Recommended approach:
+  1. Install a Git-for-Windows compatible Bash runtime.
+  2. Place runtime files under the location above.
+  3. Ensure bash.exe is available at:
+     ${runtime_root}/bin/bash.exe
+
+Then set:
+  export WINBREW_BASH_ROOT="${runtime_root}"
+
+This helper intentionally does not download binaries automatically.
+MSG
