@@ -1,0 +1,37 @@
+name: winbrew-windows-installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - preview
+    paths:
+      - "package/windows/**"
+      - ".github/workflows/winbrew-windows-installer.yml"
+      - "docs/WinBrew-Windows-Strategy.md"
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+    env:
+      WINBREW_VERSION: "0.1.0-${{ github.run_number }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --no-progress -y
+
+      - name: Build WinBrew installer
+        shell: powershell
+        run: |
+          ./package/windows/build-installer.ps1 -Version "${env:WINBREW_VERSION}" -OutputDir "dist/windows-installer"
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: winbrew-windows-installer
+          path: dist/windows-installer/*.exe
+          if-no-files-found: error
